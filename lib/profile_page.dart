@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'main.dart';
+
 import 'edit_profile_page.dart';
 import 'settings_page.dart';
 import 'help_support_page.dart';
-import 'item_detail_page.dart';
-
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'help_support_page.dart';
 import 'admin_panel_page.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -22,289 +17,175 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
-    final bool isDark = MyApp.of(context)?.isDark ?? false;
-    final themeColor = const Color(0xFF3A7BD5);
-    final accentColor = const Color(0xFF00D2FF);
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text("User not logged in")),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.grey.shade50,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-
+      backgroundColor: isDark ? Colors.black : Colors.grey.shade100,
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
-            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .doc(user.uid)
             .snapshots(),
-
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-          final name = data['name'] ?? "User Name";
-          final email =
-              data['email'] ?? FirebaseAuth.instance.currentUser!.email ?? "";
-          final profileImageUrl = data['profileImage'] ?? "";
+          final data =
+              snapshot.data!.data() as Map<String, dynamic>? ?? {};
+
+          final name = data['name'] ?? "User";
+          final email = data['email'] ?? user.email ?? "";
+          final image = data['profileImage'] ?? "";
 
           return SingleChildScrollView(
             child: Column(
               children: [
 
                 // 🔥 HEADER
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: 260, // reduced height
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [Colors.grey.shade900, Colors.black]
-                              : [themeColor, accentColor],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(40),
-                          bottomRight: Radius.circular(40),
-                        ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(top: 60, bottom: 30),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [Colors.grey.shade900, Colors.black]
+                          : [const Color(0xFF3A7BD5), const Color(0xFF00D2FF)],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: image.isNotEmpty
+                            ? NetworkImage(image)
+                            : const AssetImage("assets/profpic.png")
+                        as ImageProvider,
                       ),
-                    ),
 
-                    Column(
-                      children: [
-                        const SizedBox(height: 80),
+                      const SizedBox(height: 12),
 
-                        // PROFILE IMAGE
-                        Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border:
-                                Border.all(color: Colors.white, width: 4),
-                              ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white,
-                                backgroundImage: profileImageUrl.isNotEmpty
-                                    ? NetworkImage(profileImageUrl)
-                                    : const AssetImage("assets/profpic.png")
-                                as ImageProvider,
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => EditProfilePage()),
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.edit,
-                                      color: themeColor, size: 18),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Text(
-                          name,
+                      Text(name,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold)),
 
-                        Text(
-                          email,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                // 🔥 FLOATING STATS
-                Transform.translate(
-                  offset: const Offset(0, -35),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildPremiumStat(
-                            "2",
-                            "Reported",
-                            Icons.assignment_outlined,
-                            isDark,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildPremiumStat(
-                            "1",
-                            "Helped",
-                            Icons.favorite_border,
-                            isDark,
-                          ),
-                        ),
-                      ],
-                    ),
+                      Text(email,
+                          style: const TextStyle(color: Colors.white70)),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
-                // --- MY ACTIVITY ---
+                // 🔥 STATS
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
                     children: [
-                      _buildSectionHeader("My Recent Activity", isDark),
-                      const SizedBox(height: 12),
-
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color:
-                          isDark ? Colors.grey.shade900 : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Text(
-                          "⭐ welcome Back Nice To See You again",
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 12),
-                        ),
+                      Expanded(
+                        child: _buildStat("2", "Reported", isDark),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStat("1", "Helped", isDark),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // --- ACTIONS ---
+                // 🔥 ACTIONS
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
 
-                      _buildActionTile(
-                        Icons.person_outline,
+                      _buildTile(
+                        Icons.person,
                         "Edit Profile",
-                        "Change name, photo, and info",
-                        Colors.indigo,
-                        isDark,
+                        "Update your info",
                             () => Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (_) => EditProfilePage()),
                         ),
+                        isDark,
                       ),
 
-                      _buildActionTile(
-                        Icons.settings_outlined,
+                      _buildTile(
+                        Icons.settings,
                         "Settings",
-                        "Notifications, Theme",
-                        Colors.blueGrey,
-                        isDark,
+                        "App preferences",
                             () => Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (_) => const SettingsPage()),
                         ),
+                        isDark,
                       ),
 
-                      _buildActionTile(
-                        Icons.help_outline,
+                      _buildTile(
+                        Icons.help,
                         "Help & Support",
-                        "FAQs, Contact Us",
-                        Colors.teal,
-                        isDark,
+                        "Get help",
                             () => Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
                               const HelpSupportPage()),
                         ),
+                        isDark,
                       ),
 
-                      _buildActionTile(
-                        icon: Icons.help_outline,
-                        title: "Help & Support",
-                        subtitle: "Get help or contact support",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => const HelpSupportPage(),
-                              transitionsBuilder: (_, animation, __, child) {
-                                return SlideTransition(
-                                  position: Tween(
-                                    begin: const Offset(1, 0),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: child,
-                                );
-                              },
-                            ),
-                          );
+                      // 🔥 LOGOUT
+                      _buildTile(
+                        Icons.logout,
+                        "Logout",
+                        "Sign out from account",
+                            () async {
+                          await FirebaseAuth.instance.signOut();
                         },
+                        isDark,
                       ),
                     ],
                   ),
                 ),
-                FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .get(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const SizedBox();
 
-                    final data = snapshot.data!.data() as Map<String, dynamic>;
-                    final role = data['role'] ?? "user";
+                const SizedBox(height: 20),
 
-                    if (role != "admin") return const SizedBox();
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AdminPanelPage(),
-                            ),
-                          );
-                        },
-                        child: const Text("Admin Panel"),
-                      ),
-                    );
-                  },
-                ),
+                // 🔥 ADMIN BUTTON
+                if (data['role'] == "admin")
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AdminPanelPage()),
+                        );
+                      },
+                      child: const Text("Admin Panel"),
+                    ),
+                  ),
 
                 const SizedBox(height: 40),
               ],
@@ -315,68 +196,34 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 🔹 STAT CARD
-  Widget _buildPremiumStat(
-      String value, String label, IconData icon, bool isDark) {
+  // 🔹 STAT
+  Widget _buildStat(String value, String label, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey.shade900 : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-        ],
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          Icon(icon, color: Colors.blue, size: 22),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: isDark ? Colors.grey : Colors.grey.shade600,
-              fontSize: 13,
-            ),
-          ),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black)),
+          Text(label),
         ],
       ),
     );
   }
 
-  // 🔹 SECTION TITLE
-  Widget _buildSectionHeader(String title, bool isDark) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: isDark ? Colors.white70 : Colors.grey.shade600,
-      ),
-    );
-  }
-
-  // 🔹 ACTION TILE
-  Widget _buildActionTile(
+  // 🔹 TILE
+  Widget _buildTile(
       IconData icon,
       String title,
       String subtitle,
-      Color color,
-      bool isDark,
       VoidCallback onTap,
-      ) {
+      bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -385,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(icon, color: color),
+        leading: Icon(icon, color: Colors.blue),
         title: Text(title,
             style: TextStyle(
                 color: isDark ? Colors.white : Colors.black)),

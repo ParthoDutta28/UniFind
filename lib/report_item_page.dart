@@ -197,7 +197,7 @@ class _ReportItemPageState extends State<ReportItemPage> {
               const SizedBox(height: 40),
               // 🔥 ONLY CHANGE HERE (CONNECTED CONTROLLERS)
               if (isLost) ...[
-                const SizedBox(height: 20),
+                // const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -232,7 +232,7 @@ class _ReportItemPageState extends State<ReportItemPage> {
                   ),
                 ),
               ],
-
+              const SizedBox(height: 12),
               // Submit Button
               SizedBox(
                 width: double.infinity,
