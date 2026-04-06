@@ -68,136 +68,199 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  Widget _buildPremiumTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        onTap: onTap,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF4FACFE), size: 22),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const themeColor = Color(0xFF4FACFE);
+    const accentColor = Color(0xFF00F2FE);
+
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Text("Register"),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [themeColor, accentColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
           child: Column(
             children: [
-              // Lottie Animation
-              SizedBox(
-                height: 200,
-                child: Lottie.asset(
-                  isPasswordField
-                      ? "assets/register.json"
-                      : "assets/register.json",
-                  repeat: true,
+              // --- HEADER ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Text(
+                      "Create Account",
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 40),
 
-              // Full Name
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: "Full Name",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              // --- MAIN FORM ---
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 20),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8FAFF),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(30),
+                    child: Column(
+                      children: [
+                        // Lottie Animation
+                        SizedBox(
+                          height: 150,
+                          child: Lottie.asset(
+                            "assets/Panda Waving.json",
+                            repeat: true,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
 
-              // Student ID
-              TextField(
-                controller: studentIdController,
-                decoration: InputDecoration(
-                  labelText: "Student ID",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+                        _buildPremiumTextField(
+                          controller: nameController,
+                          label: "Full Name",
+                          icon: Icons.person_outline_rounded,
+                        ),
+                        _buildPremiumTextField(
+                          controller: studentIdController,
+                          label: "Student ID",
+                          icon: Icons.badge_outlined,
+                        ),
+                        _buildPremiumTextField(
+                          controller: emailController,
+                          label: "Email",
+                          icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          onTap: () => setState(() => isPasswordField = false),
+                        ),
+                        _buildPremiumTextField(
+                          controller: courseController,
+                          label: "Course",
+                          icon: Icons.school_outlined,
+                        ),
+                        _buildPremiumTextField(
+                          controller: semesterController,
+                          label: "Semester",
+                          icon: Icons.grid_view_rounded,
+                          keyboardType: TextInputType.number,
+                        ),
+                        _buildPremiumTextField(
+                          controller: contactController,
+                          label: "Contact Number",
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                        ),
+                        _buildPremiumTextField(
+                          controller: passwordController,
+                          label: "Password",
+                          icon: Icons.lock_outline_rounded,
+                          obscureText: true,
+                          onTap: () => setState(() => isPasswordField = true),
+                        ),
 
-              // Email
-              TextField(
-                controller: emailController,
-                onTap: () => setState(() => isPasswordField = false),
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-              // Course
-              TextField(
-                controller: courseController,
-                decoration: InputDecoration(
-                  labelText: "Course",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                        // Register Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: const LinearGradient(colors: [themeColor, accentColor]),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: themeColor.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: onRegister,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                      "Sign Up",
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Already have an account? ", style: TextStyle(color: Colors.grey.shade600)),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(color: themeColor, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Semester
-              TextField(
-                controller: semesterController,
-                decoration: InputDecoration(
-                  labelText: "Semester",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 20),
-
-              // Contact Number
-              TextField(
-                controller: contactController,
-                decoration: InputDecoration(
-                  labelText: "Contact Number",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 20),
-
-              // Password
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                onTap: () => setState(() => isPasswordField = true),
-                decoration: InputDecoration(
-                  labelText: "Create New Password",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Register Button
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                ),
-                onPressed: onRegister,
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                  "Register",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ],
@@ -207,3 +270,4 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
+

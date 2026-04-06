@@ -17,10 +17,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
+  final List<Widget> _pages = [
+    const HomeBody(),
+    const SearchPage(),
+    const ReportItemPage(),
+    const ChatPlaceholder(),
+    const ProfilePage(),
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
 
     switch (index) {
       case 0:
@@ -51,48 +60,69 @@ class _HomePageState extends State<HomePage> {
         break;
     }
   }
+}
+
+class HomeBody extends StatelessWidget {
+  const HomeBody({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+    final bool isDark = MyApp.of(context)?.isDark ?? false;
+    final themeColor = const Color(0xFF3A7BD5);
 
-      // --- APP BAR ---
+    return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 2,
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        elevation: 0,
         title: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             ClipOval(
               child: Image.asset(
                 "assets/app_logo.png",
-                height: 55,
-                width: 55,
+                height: 40,
+                width: 40,
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: 8),
-            const Text(
+            const SizedBox(width: 10),
+            Text(
               "UniFind",
               style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 27,
+                color: isDark ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w900,
+                fontSize: 24,
+                letterSpacing: -0.5,
               ),
             ),
           ],
         ),
-        centerTitle: true,
-        actions: const [
-          Icon(Icons.notifications_none, color: Colors.black87),
-          SizedBox(width: 12),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            onPressed: () {
+              MyApp.of(context)?.toggleTheme();
+            },
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.notifications_none_rounded, color: isDark ? Colors.white : Colors.black),
+              onPressed: () {},
+            ),
+          ),
         ],
       ),
-
-      // --- BODY ---
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,6 +157,27 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+                ),
+                const SizedBox(width: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Hello, Partho!",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    Text(
+                      "Have you lost anything today?",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -195,15 +246,12 @@ class _HomePageState extends State<HomePage> {
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No items yet"));
+                  return _buildEmptyState(isDark);
                 }
-
                 final items = snapshot.data!.docs;
 
                 return Column(
@@ -273,27 +321,59 @@ class _HomePageState extends State<HomePage> {
                   }).toList(),
                 );
               },
-            )
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+}
 
-      // --- BOTTOM NAV ---
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search_outlined), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Upload'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
+class ChatPlaceholder extends StatelessWidget {
+  const ChatPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = MyApp.of(context)?.isDark ?? false;
+    return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.white,
+      appBar: AppBar(
+        title: Text(
+          "Chat",
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.blue.withValues(alpha: 0.5)),
+            const SizedBox(height: 20),
+            Text(
+              "Chat Support",
+              style: TextStyle(
+                fontSize: 22, 
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Coming soon! Stay tuned.",
+              style: TextStyle(
+                fontSize: 16, 
+                color: isDark ? Colors.white60 : Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -302,29 +382,34 @@ class _HomePageState extends State<HomePage> {
 // --- Dashboard Card (UNCHANGED) ---
 class DashboardCard extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final String buttonText;
-  final Color color;
-  final Color buttonColor;
+  final String count;
+  final String label;
+  final Gradient gradient;
   final IconData icon;
 
-  const DashboardCard({
+  const PremiumDashboardCard({
     super.key,
     required this.title,
-    required this.subtitle,
-    required this.buttonText,
-    required this.color,
-    required this.buttonColor,
+    required this.count,
+    required this.label,
+    required this.gradient,
     required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,4 +426,114 @@ class DashboardCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class PremiumItemTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final bool isDark;
+
+  const PremiumItemTile({super.key, required this.item, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    bool isFound = item['status'] == 'Found';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: ListTile(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ItemDetailPage(item: item)),
+          );
+        },
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3A7BD5).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(
+            item['category'] == 'Electronics' ? Icons.devices : Icons.inventory_2_outlined,
+            color: const Color(0xFF3A7BD5),
+            size: 28,
+          ),
+        ),
+        title: Text(
+          item['title'] ?? "Unnamed Item",
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            fontSize: 16,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              Icon(Icons.location_on_outlined, size: 14, color: isDark ? Colors.white54 : Colors.grey.shade600),
+              const SizedBox(width: 4),
+              Text(
+                item['location'] ?? "Unknown Location", 
+                style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isFound ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                item['status'].toUpperCase(),
+                style: TextStyle(
+                  color: isFound ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _buildEmptyState(bool isDark) {
+  return Center(
+    child: Column(
+      children: [
+        const SizedBox(height: 40),
+        Icon(Icons.inbox_outlined, size: 60, color: isDark ? Colors.white24 : Colors.grey.shade300),
+        const SizedBox(height: 16),
+        Text(
+          "No items found", 
+          style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade500, fontSize: 16),
+        ),
+      ],
+    ),
+  );
 }

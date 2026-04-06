@@ -3,6 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'main.dart';
 import 'edit_profile_page.dart';
+import 'settings_page.dart';
+import 'help_support_page.dart';
+import 'item_detail_page.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -16,14 +20,20 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  bool isDark = false;
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.grey.shade100,
+    final bool isDark = MyApp.of(context)?.isDark ?? false;
+    final themeColor = const Color(0xFF3A7BD5);
+    final accentColor = const Color(0xFF00D2FF);
 
-      // 🔥 REAL-TIME FIRESTORE LISTENER
+    return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.grey.shade50,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -31,13 +41,12 @@ class _ProfilePageState extends State<ProfilePage> {
             .snapshots(),
 
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-
-          final name = data['name'] ?? "No Name";
+          final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
+          final name = data['name'] ?? "User Name";
           final email =
               data['email'] ?? FirebaseAuth.instance.currentUser!.email ?? "";
           final profileImageUrl = data['profileImage'] ?? "";
@@ -46,61 +55,143 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               children: [
 
-                // --- HEADER SECTION ---
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 40, horizontal: 20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [Colors.black87, Colors.black54]
-                          : [Color(0xFF3A7BD5), Color(0xFF00D2FF)],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-
-                      // 🔥 REAL-TIME PROFILE IMAGE
-                      CircleAvatar(
-                        radius: 45,
-                        backgroundColor: Colors.white,
-                        backgroundImage: profileImageUrl.isNotEmpty
-                            ? NetworkImage(profileImageUrl)
-                            : const AssetImage(
-                            "assets/profpic.png")
-                        as ImageProvider,
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                // 🔥 HEADER
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 260, // reduced height
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [Colors.grey.shade900, Colors.black]
+                              : [themeColor, accentColor],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(40),
+                          bottomRight: Radius.circular(40),
                         ),
                       ),
+                    ),
 
-                      Text(
-                        email,
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 14),
-                      ),
+                    Column(
+                      children: [
+                        const SizedBox(height: 80),
 
-                      const SizedBox(height: 6),
+                        // PROFILE IMAGE
+                        Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                Border.all(color: Colors.white, width: 4),
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                backgroundImage: profileImageUrl.isNotEmpty
+                                    ? NetworkImage(profileImageUrl)
+                                    : const AssetImage("assets/profpic.png")
+                                as ImageProvider,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => EditProfilePage()),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.edit,
+                                      color: themeColor, size: 18),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        Text(
+                          email,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                // 🔥 FLOATING STATS
+                Transform.translate(
+                  offset: const Offset(0, -35),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildPremiumStat(
+                            "2",
+                            "Reported",
+                            Icons.assignment_outlined,
+                            isDark,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildPremiumStat(
+                            "1",
+                            "Helped",
+                            Icons.favorite_border,
+                            isDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // --- MY ACTIVITY ---
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader("My Recent Activity", isDark),
+                      const SizedBox(height: 12),
 
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.all(20),
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
+                          color:
+                          isDark ? Colors.grey.shade900 : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Text(
                           "⭐ welcome Back Nice To See You again",
@@ -108,65 +199,56 @@ class _ProfilePageState extends State<ProfilePage> {
                               color: Colors.white, fontSize: 12),
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildStatBox("2", "Items Reported"),
-                          _buildStatBox("1", "People Helped"),
-                        ],
-                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // --- QUICK ACTIONS ---
+                // --- ACTIONS ---
                 Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
                     children: [
 
-                      Text(
-                        "Quick Actions",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.white
-                              : Colors.black87,
+                      _buildActionTile(
+                        Icons.person_outline,
+                        "Edit Profile",
+                        "Change name, photo, and info",
+                        Colors.indigo,
+                        isDark,
+                            () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => EditProfilePage()),
                         ),
                       ),
 
-                      const SizedBox(height: 10),
-
                       _buildActionTile(
-                        icon: Icons.edit,
-                        title: "Edit Profile",
-                        subtitle:
-                        "Update your profile information",
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    EditProfilePage()),
-                          );
-                          // 🔥 NO NEED TO CALL fetch anymore
-                        },
+                        Icons.settings_outlined,
+                        "Settings",
+                        "Notifications, Theme",
+                        Colors.blueGrey,
+                        isDark,
+                            () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SettingsPage()),
+                        ),
                       ),
 
                       _buildActionTile(
-                        icon: Icons.settings,
-                        title: "Settings",
-                        subtitle: "Manage your preferences",
+                        Icons.help_outline,
+                        "Help & Support",
+                        "FAQs, Contact Us",
+                        Colors.teal,
+                        isDark,
+                            () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                              const HelpSupportPage()),
+                        ),
                       ),
 
                       _buildActionTile(
@@ -224,30 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
 
-                const SizedBox(height: 20),
-
-                // --- SIGN OUT BUTTON ---
-                TextButton.icon(
-                  onPressed: () async {
-                    await FirebaseAuth.instance.signOut();
-
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              AnimatedLoginPage()),
-                          (route) => false,
-                    );
-                  },
-                  icon:
-                  const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    "Sign Out",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
               ],
             ),
           );
@@ -256,55 +315,82 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- HELPERS ---
-  Widget _buildStatBox(String value, String label) {
+  // 🔹 STAT CARD
+  Widget _buildPremiumStat(
+      String value, String label, IconData icon, bool isDark) {
     return Container(
-      width: 140,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+        ],
       ),
       child: Column(
         children: [
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold)),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 13)),
+          Icon(icon, color: Colors.blue, size: 22),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.grey : Colors.grey.shade600,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    VoidCallback? onTap,
-  }) {
-    return Card(
-      color: isDark ? Colors.grey[900] : Colors.white,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10)),
+  // 🔹 SECTION TITLE
+  Widget _buildSectionHeader(String title, bool isDark) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: isDark ? Colors.white70 : Colors.grey.shade600,
+      ),
+    );
+  }
+
+  // 🔹 ACTION TILE
+  Widget _buildActionTile(
+      IconData icon,
+      String title,
+      String subtitle,
+      Color color,
+      bool isDark,
+      VoidCallback onTap,
+      ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.blue),
+        onTap: onTap,
+        leading: Icon(icon, color: color),
         title: Text(title,
             style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color:
-                isDark ? Colors.white : Colors.black)),
-        subtitle: Text(subtitle,
-            style: TextStyle(
-                color: isDark
-                    ? Colors.white70
-                    : Colors.black54)),
-        trailing:
-        const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
+                color: isDark ? Colors.white : Colors.black)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
